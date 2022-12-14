@@ -1,5 +1,6 @@
 from collections import defaultdict, namedtuple
 from dataclasses import dataclass
+from time import sleep
 
 from helpers import get_data
 
@@ -17,11 +18,19 @@ class Grid:
     def get(self, point: Point):
         return self.values.get(point.y, {}).get(point.x)
 
+    def set_from_lines(self, data: list[str]):
+        for line in data:
+            parts = [to_coords(c) for c in line.strip().split(' -> ')]
+            for start, end in zip(parts, parts[1:]):
+                coords = get_line_coordinates(start, end)
+                for x, y in coords:
+                    self.set(x, y, '#')
+
     def print(self):
         import os
         os.system('clear')
-        max_y = max(self.values.keys())
-        min_y = min(self.values.keys())
+        max_y = max(self.values.keys()) + 2
+        min_y = min(0, min(self.values.keys()))
         min_x = min(min(row.keys()) for row in self.values.values())
         man_x = max(max(row.keys()) for row in self.values.values())
         for y in range(min_y, max_y + 1):
@@ -46,9 +55,31 @@ class Grid:
                 self.set(pos.x, pos.y, 'o')
                 count += 1
                 pos = Point(500, 0)
-                self.print()
             if pos.x < min_x or pos.y > max_y:
                 return count
+
+    def simulate_2(self):
+        pos = Point(500, 0)
+        max_y = max(self.values.keys())
+        floor_y = max_y + 2
+        count = 0
+        while True:
+            down_pos = Point(pos.x, pos.y + 1)
+            down_left_pos = Point(pos.x - 1, pos.y + 1)
+            down_right_pos = Point(pos.x + 1, pos.y + 1)
+            could_fall = False
+            for p in [down_pos, down_left_pos, down_right_pos]:
+                if not self.get(p):
+                    pos = p
+                    could_fall = True
+                if p.y + 1 == floor_y:
+                    could_fall = False
+            if pos.x == 500 and pos.y == 0:
+                return count
+            if not could_fall:
+                self.set(pos.x, pos.y, 'o')
+                count += 1
+                pos = Point(500, 0)
 
 
 def get_line_coordinates(start: Point, end: Point):
@@ -68,16 +99,14 @@ def to_coords(coord_str) -> Point:
 def day_14():
     # data = get_data(14, "example")
     data = get_data(14)
-    grid = Grid()
-    for line in data:
-        parts = [to_coords(c) for c in line.strip().split(' -> ')]
-        for start, end in zip(parts, parts[1:]):
-            coords = get_line_coordinates(start, end)
-            for x, y in coords:
-                grid.set(x, y, '#')
-    grid.print()
 
+    grid = Grid()
+    grid.set_from_lines(data)
     print("Part 1: ", grid.simulate())
+
+    grid_2 = Grid()
+    grid_2.set_from_lines(data)
+    print("Part 2: ", grid_2.simulate_2() + 1)
 
 
 if __name__ == "__main__":
