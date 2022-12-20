@@ -23,30 +23,49 @@ def day_20():
     # data = get_data(20, "example")
     data = get_data(20)
     content = [int(n.strip()) for n in data]
-    nodes = [Node(n, i) for i, n in enumerate(content)]
 
-    for i, node in enumerate(nodes):
-        node.next = nodes[(i + 1) % len(content)]
+    def move(nodes):
+        for node in nodes:
+            steps = node.value % (len(content) - 1)
+            if steps == 0:
+                continue
 
-    for node in nodes:
-        if node.value == 0:
-            continue
+            insertion_node = node.after(steps)
+            buffer = insertion_node.next
 
-        steps = node.value % (len(content) - 1)
-        insertion_node = node.after(steps)
-        buffer = insertion_node.next
+            # print(f"{node.value} moves between {insertion_node.value} and {insertion_node.next.value}")
 
-        # print(f"{node.value} moves between {insertion_node.value} and {insertion_node.next.value}")
+            prev = next(n for n in nodes if n.next == node)
+            prev.next = node.next
+            insertion_node.next = node
+            node.next = buffer
 
-        prev = next(n for n in nodes if n.next == node)
-        prev.next = node.next
-        insertion_node.next = node
-        node.next = buffer
+    def part_1():
+        nodes = [Node(n, i) for i, n in enumerate(content)]
 
-    zero = next(n for n in nodes if n.value == 0)
-    assert (zero == zero.after(len(content) - 1))
+        for i, node in enumerate(nodes):
+            node.next = nodes[(i + 1) % len(content)]
 
-    print("Part 1: ", sum(zero.after(n).value for n in [1000, 2000, 3000]))
+        move(nodes)
+
+        zero = next(n for n in nodes if n.value == 0)
+        print("Part 1: ", sum(zero.after(n).value for n in [1000, 2000, 3000]))
+
+    def part_2():
+        key = 811589153
+        nodes = [Node(n * key, i) for i, n in enumerate(content)]
+
+        for i, node in enumerate(nodes):
+            node.next = nodes[(i + 1) % len(content)]
+
+        for _ in range(10):
+            move(nodes)
+
+        zero = next(n for n in nodes if n.value == 0)
+        print("Part 2: ", sum(zero.after(n).value for n in [1000, 2000, 3000]))
+
+    part_1()
+    part_2()
 
 
 if __name__ == "__main__":
